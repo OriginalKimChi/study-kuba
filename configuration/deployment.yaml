@@ -1,1 +1,22 @@
-# TODO
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jh-app
+  namespace: jh
+  labels:
+    app: jh-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: jh-app
+  template:
+    metadata:
+      labels:
+        app: jh-app
+    spec:
+      containers:
+        - image: asia.gcr.io/kuba-310814/jh-app:0.1
+          name: jh-app
+          ports:
+            - containerPort: 8080

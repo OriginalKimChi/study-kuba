@@ -1,121 +1,25 @@
-# study-kuba
+## 스터디 쿠바 마지막
 
-Spring Application
+### `application.yml & HealthApi.java` 수정
 
-```shell
-Project
-├── README.md
-├── README_1.md
-├── configuration
-│   ├── deployment.yaml
-│   └── service.yaml
-├── logs
-│   └── spring.log
-└── spring
-    ├── Dockerfile
-    ├── HELP.md
-    ├── build
-    │   ├── bootJarMainClassName
-    │   ├── classes
-    │   │   └── java
-    │   │       └── main
-    │   │           └── com
-    │   │               └── example
-    │   │                   └── spring
-    │   │                       ├── Application.class
-    │   │                       ├── api
-    │   │                       │   └── HealthApi.class
-    │   │                       ├── core
-    │   │                       │   └── service
-    │   │                       │       └── HealthService.class
-    │   │                       └── infrastructure
-    │   │                           └── service
-    │   │                               └── DefaultHealthService.class
-    │   ├── generated
-    │   │   └── sources
-    │   │       ├── annotationProcessor
-    │   │       │   └── java
-    │   │       │       └── main
-    │   │       └── headers
-    │   │           └── java
-    │   │               └── main
-    │   ├── libs
-    │   │   ├── logs
-    │   │   │   └── spring.log
-    │   │   └── spring-0.0.1-SNAPSHOT.jar
-    │   ├── resources
-    │   │   └── main
-    │   │       ├── application.yml
-    │   │       ├── static
-    │   │       └── templates
-    │   └── tmp
-    │       ├── bootJar
-    │       │   └── MANIFEST.MF
-    │       └── compileJava
-    │           └── source-classes-mapping.txt
-    ├── build.gradle
-    ├── gradle
-    │   └── wrapper
-    │       ├── gradle-wrapper.jar
-    │       └── gradle-wrapper.properties
-    ├── gradlew
-    ├── gradlew.bat
-    ├── settings.gradle
-    ├── spring.iml
-    └── src
-        ├── main
-        │   ├── java
-        │   │   └── com
-        │   │       └── example
-        │   │           └── spring
-        │   │               ├── Application.java
-        │   │               └── api
-        │   │                   └── HealthApi.java
-        │   └── resources
-        │       ├── application.yml
-        │       ├── static
-        │       └── templates
-        └── test
-            └── java
-                └── com
-                    └── example
-                        └── spring
-                            └── ApplicationTests.java
-```
+1. 현재 설정은 애플리케이션 내에서 발생되는 로그를 stdout으로 출력이 되고 있다.
+   `원한다면 server tomcat의 access log도 stdout으로 출력하도록 설정`
+2. HealthApi의 /health endpoint에서 로그를 출력하도록 추가
 
-Spring Application 코드의 변경사항
+### 애플리케이션 배포
 
-- `application.yml`: logback 설정
-- `HealthApi.java`: `/health`  endpoint 제공
+1. default-pool node의 각자 namespace에 해당 application을 배포 (_nodeSelector_ 사용)
+2. `/health` endpoint를 주기적으로 찌르는 [cronjob](https://kubernetes.io/ko/docs/concepts/workloads/controllers/cron-jobs/)
+   resource를 application과 동일한 node & namespace에 배포 (_podAffinity_ 사용)
+3. 주기적으로 로그가 생성되고 있는지 확인
 
-### 0. checkout branch
+### Loki(PLG) stack 배포
 
-각자의 branch를 만들고 해당 branch를 사용, 혹은 각자의 local에서 작성
+1. [helm](https://helm.sh/docs/intro/install/) 을 통한 loki stack을 monitoring-pool의 각자 namespace에
+   배포 `Deploy Loki Stack (Loki, Promtail, Grafana, Prometheus)` (https://grafana.com/docs/loki/latest/installation/helm/)
+2. [Logging] Grafana의 Explore 탭에서 주기적으로 생성되는 로그 확인. (아마 모든 설정이 잘 되어있겠지만) 로그가 보이지 않는다면 datasource 등의 설정 값 확인이
+   필요 `Promtail configuration (https://grafana.com/docs/loki/latest/clients/promtail/configuration/)으로 세세한 설정이 필요할 수도..`
+3. [Monitoring] [Grafana Dashboard](https://grafana.com/grafana/dashboards) 에서 원하는 Dashboard들을 import해서
+   확인 `원한다면 Custom Dashboard 구성: PromQL 사용`
 
-### 1. Dockerfile 작성 (그대로 사용)
-
-spring boot application을 image로 만들고 GCP Container Registry에 push
-
-- asia.gcr.io/kuba-310814/{각자의 namespace}-app
-- tag: 0.1의 형식으로 사용
-
-### 2. deployment.yaml & service.yaml 작성 (service.yaml은 그대로 사용, deployment.yaml만 수정)
-
-Container Registry에 push된 image를 사용하는 pod를 관리할 deployment를 배포하고, 해당 pod들을 바라볼 service도 배포
-
-- 배포될 pod의 갯수는 2개
-- 각자의 namespace로 배포
-- Liveness probe 추가: `/health` endpoint를 사용하도록 설정
-- Readiness Probe 추가: logback에 의해 생성될 `logs/spring.log` 유무를 체크하도록 설정
-
-### 3. Readiness/Liveness Probe 확인
-
-Pod event(describe command로도 가능)를 확인해 Readiness/Liveness Probe가 모두 Pass되었는지 확인
-
-### 4. Readiness probe failed 확인
-
-Readiness Probe로 잡아둔 `logs/spring.log`를 삭제해본다. 어떤 일이 발생되는지 확인
-
-### 5. Liveness Probe 확인
-
-Liveness의 endpoint가 400 Error 응답을 받도록 수 있도록 설정해본다. 어떤 일이 발생되는지 확인
+* ~7/3일까지

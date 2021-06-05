@@ -13,9 +13,4 @@ public class HealthApi {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok().build();
     }
-
-    @GetMapping("/health2")
-    public ResponseEntity<String> health2() {
-        return ResponseEntity.badRequest().build();
-    }
 }
